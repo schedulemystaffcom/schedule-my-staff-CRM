@@ -6,7 +6,7 @@ import Sidebar from "@/components/Nav";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "The Ortho Toolbox",
+  title: "ScheduleMyStaff",
   description: "Internal sales CRM for orthodontic practice outreach",
 };
 

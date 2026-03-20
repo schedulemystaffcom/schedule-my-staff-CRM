@@ -28,6 +28,7 @@ export function getDb(): Database.Database {
       website     TEXT,
       email       TEXT,
       status      TEXT NOT NULL DEFAULT 'not_contacted',
+      practice_type TEXT NOT NULL DEFAULT 'unknown',
       google_place_id TEXT,
       created_at  TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -44,6 +45,13 @@ export function getDb(): Database.Database {
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  // Migration: add practice_type column for existing databases
+  try {
+    db.exec(`ALTER TABLE practices ADD COLUMN practice_type TEXT NOT NULL DEFAULT 'unknown'`);
+  } catch {
+    // Column already exists — ignore
+  }
 
   global.__db = db;
   return db;

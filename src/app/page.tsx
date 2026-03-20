@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
-import { STATUS_LABELS, type Practice, type OutreachNote, type Status } from "@/lib/types";
+import { STATUS_LABELS, type Practice, type OutreachNote, type Status, type PracticeType } from "@/lib/types";
 
 const ALL_STATUSES: Status[] = [
   "needs_review", "not_contacted", "called", "left_voicemail",
@@ -11,9 +11,9 @@ const ALL_STATUSES: Status[] = [
 ];
 
 const STATUS_BTN: Record<Status, { active: string; inactive: string }> = {
-  needs_review:       { active: "bg-yellow-400 border-yellow-400 text-yellow-900",    inactive: "border-slate-200 text-slate-600 hover:border-yellow-300 hover:bg-yellow-50" },
+  needs_review:       { active: "bg-yolk-400 border-yolk-400 text-ink",              inactive: "border-slate-200 text-slate-600 hover:border-yolk-200 hover:bg-yolk-50" },
   not_contacted:      { active: "bg-slate-700 border-slate-700 text-white",           inactive: "border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-slate-50" },
-  called:             { active: "bg-blue-600 border-blue-600 text-white",             inactive: "border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50" },
+  called:             { active: "bg-cobalt-600 border-cobalt-600 text-white",         inactive: "border-slate-200 text-slate-600 hover:border-cobalt-200 hover:bg-cobalt-50" },
   left_voicemail:     { active: "bg-amber-500 border-amber-500 text-white",           inactive: "border-slate-200 text-slate-600 hover:border-amber-300 hover:bg-amber-50" },
   said_not_right_now: { active: "bg-orange-500 border-orange-500 text-white",         inactive: "border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50" },
   not_interested:     { active: "bg-red-500 border-red-500 text-white",               inactive: "border-slate-200 text-slate-600 hover:border-red-300 hover:bg-red-50" },
@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const [practices, setPractices] = useState<Practice[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeStatus, setActiveStatus] = useState("all");
+  const [typeFilter, setTypeFilter] = useState<PracticeType | "all">("all");
   const [stateFilter, setStateFilter] = useState("all");
   const [availableStates, setAvailableStates] = useState<string[]>([]);
   const [cityFilter, setCityFilter] = useState("all");
@@ -73,6 +74,7 @@ export default function DashboardPage() {
     const params = new URLSearchParams({
       sort, order,
       ...(activeStatus !== "all" && { status: activeStatus }),
+      ...(typeFilter !== "all" && { practiceType: typeFilter }),
       ...(stateFilter !== "all" && { state: stateFilter }),
       ...(cityFilter !== "all" && { city: cityFilter }),
       ...(debouncedSearch && { search: debouncedSearch }),
@@ -81,7 +83,7 @@ export default function DashboardPage() {
     const data: Practice[] = await res.json();
     setPractices(data);
     setLoading(false);
-  }, [activeStatus, stateFilter, cityFilter, debouncedSearch, sort, order]);
+  }, [activeStatus, typeFilter, stateFilter, cityFilter, debouncedSearch, sort, order]);
 
   const fetchCounts = useCallback(async () => {
     const res = await fetch("/api/practices");
@@ -111,7 +113,7 @@ export default function DashboardPage() {
   // Reset city filter when state changes
   useEffect(() => { setCityFilter("all"); }, [stateFilter]);
   // Clear selection when list changes due to filter/search/sort
-  useEffect(() => { setSelectedIds(new Set()); setConfirmingDelete(false); }, [activeStatus, stateFilter, cityFilter, debouncedSearch, sort, order]);
+  useEffect(() => { setSelectedIds(new Set()); setConfirmingDelete(false); }, [activeStatus, typeFilter, stateFilter, cityFilter, debouncedSearch, sort, order]);
 
   const openPanel = async (practice: Practice) => {
     setPanel(practice);
@@ -248,8 +250,8 @@ export default function DashboardPage() {
     if (sort !== field)
       return <svg className="w-3 h-3 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" /></svg>;
     return order === "asc"
-      ? <svg className="w-3 h-3 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
-      : <svg className="w-3 h-3 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" /></svg>;
+      ? <svg className="w-3 h-3 text-cobalt-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+      : <svg className="w-3 h-3 text-cobalt-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" /></svg>;
   };
 
   return (
@@ -258,7 +260,7 @@ export default function DashboardPage() {
       <div>
 
         {/* Sticky header */}
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-200 px-6 py-4">
+        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-xl font-bold text-slate-900">Practices</h1>
@@ -272,14 +274,42 @@ export default function DashboardPage() {
             </button>
           </div>
 
+          {/* Practice type toggle */}
+          <div className="flex items-center gap-1.5 mb-3">
+            {(["all", "orthodontist", "dentist", "unknown"] as const).map((t) => {
+              const labels: Record<typeof t, string> = {
+                all: "All Types",
+                orthodontist: "Orthodontists",
+                dentist: "Dentists",
+                unknown: "Unknown",
+              };
+              const colors: Record<typeof t, { active: string; inactive: string }> = {
+                all:          { active: "bg-cobalt-700 text-white",          inactive: "bg-slate-100 text-slate-500 hover:bg-cobalt-50 hover:text-cobalt-700" },
+                orthodontist: { active: "bg-cobalt-600 text-white",          inactive: "bg-slate-100 text-slate-500 hover:bg-cobalt-50 hover:text-cobalt-600" },
+                dentist:      { active: "bg-yolk-400 text-ink",              inactive: "bg-slate-100 text-slate-500 hover:bg-yolk-50 hover:text-yolk-600" },
+                unknown:      { active: "bg-yellow-400 text-yellow-900",     inactive: "bg-slate-100 text-slate-500 hover:bg-yellow-50 hover:text-yellow-700" },
+              };
+              const active = typeFilter === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTypeFilter(t)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${active ? colors[t].active : colors[t].inactive}`}
+                >
+                  {labels[t]}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Status filter tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-px">
             <button
               onClick={() => setActiveStatus("all")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 activeStatus === "all"
-                  ? "bg-slate-900 text-white"
-                  : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                  ? "bg-cobalt-700 text-white"
+                  : "bg-slate-100 text-slate-500 hover:bg-cobalt-50 hover:text-cobalt-700"
               }`}
             >
               All
@@ -293,8 +323,8 @@ export default function DashboardPage() {
                 onClick={() => setActiveStatus(s)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   activeStatus === s
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                    ? "bg-cobalt-700 text-white"
+                    : "bg-slate-100 text-slate-500 hover:bg-cobalt-50 hover:text-cobalt-700"
                 }`}
               >
                 {STATUS_LABELS[s]}
@@ -332,7 +362,7 @@ export default function DashboardPage() {
                   setSort(f);
                   setOrder(o);
                 }}
-                className={`input pr-8 appearance-none cursor-pointer font-medium min-w-[120px] ${sort !== "created_at" || order !== "desc" ? "border-blue-400 bg-blue-50 text-blue-700" : "text-slate-600"}`}
+                className={`input pr-8 appearance-none cursor-pointer font-medium min-w-[120px] ${sort !== "created_at" || order !== "desc" ? "border-cobalt-500 bg-cobalt-50 text-cobalt-700" : "text-slate-600"}`}
               >
                 <option value="created_at:desc">Newest</option>
                 <option value="created_at:asc">Oldest</option>
@@ -350,7 +380,7 @@ export default function DashboardPage() {
                 <select
                   value={stateFilter}
                   onChange={(e) => setStateFilter(e.target.value)}
-                  className={`input pr-8 appearance-none cursor-pointer font-medium min-w-[110px] ${stateFilter !== "all" ? "border-blue-400 bg-blue-50 text-blue-700" : "text-slate-600"}`}
+                  className={`input pr-8 appearance-none cursor-pointer font-medium min-w-[110px] ${stateFilter !== "all" ? "border-cobalt-500 bg-cobalt-50 text-cobalt-700" : "text-slate-600"}`}
                 >
                   <option value="all">All States</option>
                   {availableStates.map((s) => (
@@ -367,7 +397,7 @@ export default function DashboardPage() {
                 <select
                   value={cityFilter}
                   onChange={(e) => setCityFilter(e.target.value)}
-                  className={`input pr-8 appearance-none cursor-pointer font-medium min-w-[130px] ${cityFilter !== "all" ? "border-blue-400 bg-blue-50 text-blue-700" : "text-slate-600"}`}
+                  className={`input pr-8 appearance-none cursor-pointer font-medium min-w-[130px] ${cityFilter !== "all" ? "border-cobalt-500 bg-cobalt-50 text-cobalt-700" : "text-slate-600"}`}
                 >
                   <option value="all">All Cities</option>
                   {availableCities.map((c) => (
@@ -386,14 +416,14 @@ export default function DashboardPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50">
+                  <tr className="border-b border-slate-100 bg-cobalt-50/60">
                     <th className="px-4 py-3 w-10">
                       <input
                         type="checkbox"
                         checked={practices.length > 0 && selectedIds.size === practices.length}
                         ref={(el) => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < practices.length; }}
                         onChange={toggleSelectAll}
-                        className="rounded border-slate-300 text-blue-600 cursor-pointer"
+                        className="rounded border-slate-300 text-cobalt-600 cursor-pointer"
                       />
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">
@@ -424,7 +454,7 @@ export default function DashboardPage() {
                     <tr>
                       <td colSpan={8} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center gap-2">
-                          <svg className="animate-spin w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin w-5 h-5 text-cobalt-600" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
@@ -453,9 +483,11 @@ export default function DashboardPage() {
                         onClick={() => openPanel(p)}
                         className={`cursor-pointer transition-colors ${
                           selectedIds.has(p.id)
-                            ? "bg-blue-50"
+                            ? "bg-cobalt-50"
                             : panel?.id === p.id
-                            ? "bg-blue-50"
+                            ? "bg-cobalt-50"
+                            : activeStatus === "all" && p.status === "needs_review"
+                            ? "bg-yolk-50 hover:bg-yolk-50/80"
                             : "hover:bg-slate-50"
                         }`}
                       >
@@ -464,17 +496,17 @@ export default function DashboardPage() {
                             type="checkbox"
                             checked={selectedIds.has(p.id)}
                             onChange={() => toggleSelect(p.id)}
-                            className="rounded border-slate-300 text-blue-600 cursor-pointer"
+                            className="rounded border-slate-300 text-cobalt-600 cursor-pointer"
                           />
                         </td>
                         <td className="px-4 py-3.5">
-                          <span className={`font-semibold ${panel?.id === p.id ? "text-blue-700" : "text-slate-900"}`}>
+                          <span className={`font-semibold ${panel?.id === p.id ? "text-cobalt-700" : "text-ink"}`}>
                             {p.name}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 hidden sm:table-cell whitespace-nowrap">
                           {p.phone ? (
-                            <a href={`tel:${p.phone}`} onClick={(e) => e.stopPropagation()} className="font-mono text-xs text-slate-600 hover:text-blue-600 transition-colors">
+                            <a href={`tel:${p.phone}`} onClick={(e) => e.stopPropagation()} className="font-mono text-xs text-slate-600 hover:text-cobalt-600 transition-colors">
                               {p.phone}
                             </a>
                           ) : <span className="text-slate-300 text-xs">—</span>}
@@ -484,7 +516,7 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-4 py-3.5 hidden md:table-cell">
                           {p.website ? (
-                            <a href={p.website} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-blue-600 hover:underline truncate max-w-[160px] block">
+                            <a href={p.website} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-cobalt-600 hover:underline truncate max-w-[160px] block">
                               {p.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                             </a>
                           ) : <span className="text-slate-300 text-xs">—</span>}
@@ -526,9 +558,19 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between px-6 py-5 border-b border-slate-100 shrink-0">
               <div className="min-w-0 flex-1 pr-4">
                 <h2 className="text-lg font-bold text-slate-900 leading-snug">{panel.name}</h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Added {new Date(panel.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    panel.practice_type === "orthodontist" ? "bg-cobalt-100 text-cobalt-700" :
+                    panel.practice_type === "dentist"      ? "bg-yolk-50 text-yolk-600" :
+                                                             "bg-yellow-100 text-yellow-700"
+                  }`}>
+                    {panel.practice_type === "orthodontist" ? "Orthodontist" :
+                     panel.practice_type === "dentist"      ? "Dentist" : "Unknown type"}
+                  </span>
+                  <p className="text-xs text-slate-400">
+                    Added {new Date(panel.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <Link href={`/practice/${panel.id}`} className="text-xs text-slate-400 hover:text-slate-700 px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-medium">
@@ -569,7 +611,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Contact</p>
                   {!editingContact && (
-                    <button onClick={() => setEditingContact(true)} className="text-xs text-slate-400 hover:text-blue-600 transition-colors font-medium">
+                    <button onClick={() => setEditingContact(true)} className="text-xs text-slate-400 hover:text-cobalt-600 transition-colors font-medium">
                       Edit
                     </button>
                   )}
@@ -616,7 +658,7 @@ export default function DashboardPage() {
                         </svg>
                       </div>
                       {panel.phone ? (
-                        <a href={`tel:${panel.phone}`} className="text-sm font-semibold text-slate-900 hover:text-blue-600 font-mono tracking-wide transition-colors">
+                        <a href={`tel:${panel.phone}`} className="text-sm font-semibold text-ink hover:text-cobalt-600 font-mono tracking-wide transition-colors">
                           {panel.phone}
                         </a>
                       ) : <span className="text-sm text-slate-400 italic">No phone on file</span>}
@@ -630,7 +672,7 @@ export default function DashboardPage() {
                         </svg>
                       </div>
                       {panel.email ? (
-                        <a href={`mailto:${panel.email}`} className="text-sm text-slate-800 hover:text-blue-600 transition-colors">{panel.email}</a>
+                        <a href={`mailto:${panel.email}`} className="text-sm text-slate-800 hover:text-cobalt-600 transition-colors">{panel.email}</a>
                       ) : <span className="text-sm text-slate-400 italic">No email on file</span>}
                     </div>
 
@@ -655,7 +697,7 @@ export default function DashboardPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                           </svg>
                         </div>
-                        <a href={panel.website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate">
+                        <a href={panel.website} target="_blank" rel="noopener noreferrer" className="text-sm text-cobalt-600 hover:underline truncate">
                           {panel.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                         </a>
                       </div>
@@ -734,12 +776,12 @@ export default function DashboardPage() {
 
       {/* ─── Bulk Select Bar ──────────────────────────────────────────── */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-3 border border-slate-700">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-cobalt-700 text-white rounded-2xl shadow-2xl px-5 py-3 border border-cobalt-600">
           <span className="text-sm font-semibold">{selectedIds.size} selected</span>
           <span className="text-slate-600">·</span>
           <button
             onClick={() => { setSelectedIds(new Set()); setConfirmingDelete(false); }}
-            className="text-xs text-slate-400 hover:text-white transition-colors"
+            className="text-xs text-cobalt-200 hover:text-white transition-colors"
           >
             Clear
           </button>

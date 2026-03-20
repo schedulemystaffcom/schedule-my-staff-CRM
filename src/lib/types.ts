@@ -1,3 +1,5 @@
+export type PracticeType = "orthodontist" | "dentist" | "unknown";
+
 export type Status =
   | "needs_review"
   | "not_contacted"
@@ -35,6 +37,7 @@ export interface Practice {
   website: string | null;
   email: string | null;
   status: Status;
+  practice_type: PracticeType;
   google_place_id: string | null;
   created_at: string;
   updated_at: string;

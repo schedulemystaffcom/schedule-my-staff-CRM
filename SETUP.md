@@ -1,4 +1,4 @@
-# Ortho Toolbox — Setup Guide
+# ScheduleMyStaff — Setup Guide
 
 ## What you need first
 - **Node.js** (v18 or newer) — download at https://nodejs.org (click "LTS")

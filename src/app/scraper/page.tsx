@@ -27,6 +27,7 @@ const STATE_OPTIONS = Object.entries(STATE_NAMES).sort((a, b) =>
 export default function ScraperPage() {
   // "city" = single city/zip, "deep" = city + zip expansion, "state" = whole state
   const [mode, setMode] = useState<"city" | "deep" | "state">("deep");
+  const [practiceType, setPracticeType] = useState<"orthodontist" | "dentist" | "both">("orthodontist");
   const [location, setLocation] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,8 +47,8 @@ export default function ScraperPage() {
     setResult(null);
 
     const payload = isStateMode
-      ? { location: selectedState, stateMode: true, deepScan: false }
-      : { location: location.trim(), stateMode: false, deepScan: mode === "deep" };
+      ? { location: selectedState, stateMode: true, deepScan: false, practiceType }
+      : { location: location.trim(), stateMode: false, deepScan: mode === "deep", practiceType };
 
     try {
       const res = await fetch("/api/scrape", {
@@ -84,17 +85,52 @@ export default function ScraperPage() {
     <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-xl font-bold text-slate-900">Practice Scraper</h1>
+        <h1 className="text-xl font-bold text-ink">Practice Scraper</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Search Google Maps for orthodontic practices by city, zip code, or
-          entire state. New practices are added to the CRM automatically —
-          duplicates are skipped by phone number.
+          Search Google Maps for orthodontists, dentists, or both by city, zip
+          code, or entire state. New practices are added to the CRM automatically
+          — duplicates are skipped by phone number.
         </p>
       </div>
 
       {/* Search form */}
       <div className="card p-6 mb-6">
         <form onSubmit={handleScrape} className="flex flex-col gap-4">
+
+          {/* Practice type selector */}
+          <div>
+            <p className="block text-sm font-medium text-slate-700 mb-2">Practice type</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(["orthodontist", "dentist", "both"] as const).map((t) => {
+                const labels: Record<typeof t, { title: string; sub: string }> = {
+                  orthodontist: { title: "Orthodontists", sub: "Braces & aligners" },
+                  dentist:      { title: "Dentists",      sub: "General dental" },
+                  both:         { title: "Both",          sub: "All practice types" },
+                };
+                const active = practiceType === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setPracticeType(t)}
+                    disabled={loading}
+                    className={`flex flex-col items-center text-center px-3 py-2.5 rounded-xl border-2 transition-all ${
+                      active
+                        ? "border-cobalt-600 bg-cobalt-50 text-cobalt-700"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-cobalt-200"
+                    }`}
+                  >
+                    <span className={`text-sm font-semibold ${active ? "text-cobalt-700" : "text-slate-700"}`}>
+                      {labels[t].title}
+                    </span>
+                    <span className={`text-xs mt-0.5 ${active ? "text-cobalt-600" : "text-slate-400"}`}>
+                      {labels[t].sub}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Mode selector */}
           <div>
@@ -115,14 +151,14 @@ export default function ScraperPage() {
                     disabled={loading}
                     className={`flex flex-col items-center text-center px-3 py-2.5 rounded-xl border-2 transition-all ${
                       active
-                        ? "border-blue-500 bg-blue-50 text-blue-800"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        ? "border-cobalt-600 bg-cobalt-50 text-cobalt-700"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-cobalt-200"
                     }`}
                   >
-                    <span className={`text-sm font-semibold ${active ? "text-blue-800" : "text-slate-700"}`}>
+                    <span className={`text-sm font-semibold ${active ? "text-cobalt-700" : "text-slate-700"}`}>
                       {labels[m].title}
                     </span>
-                    <span className={`text-xs mt-0.5 ${active ? "text-blue-600" : "text-slate-400"}`}>
+                    <span className={`text-xs mt-0.5 ${active ? "text-cobalt-600" : "text-slate-400"}`}>
                       {labels[m].sub}
                     </span>
                   </button>
@@ -206,7 +242,7 @@ export default function ScraperPage() {
       {loading && (
         <div className="card p-6 mb-6">
           <div className="flex items-center gap-3 text-slate-600">
-            <svg className="animate-spin w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin w-5 h-5 text-cobalt-600 shrink-0" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -249,8 +285,8 @@ export default function ScraperPage() {
       {result && !loading && (
         <div className="card p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-              <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-8 h-8 bg-yolk-50 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-yolk-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -271,9 +307,9 @@ export default function ScraperPage() {
               <p className="text-2xl font-bold text-slate-900">{result.found}</p>
               <p className="text-xs text-slate-500 mt-0.5">Found on Google</p>
             </div>
-            <div className="bg-emerald-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-emerald-700">{result.inserted}</p>
-              <p className="text-xs text-emerald-600 mt-0.5">Added to CRM</p>
+            <div className="bg-yolk-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-yolk-600">{result.inserted}</p>
+              <p className="text-xs text-yolk-600 mt-0.5">Added to CRM</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-slate-500">{result.skipped}</p>
@@ -305,7 +341,7 @@ export default function ScraperPage() {
                       <span className="text-xs bg-purple-100 text-purple-600 font-medium px-1.5 py-0.5 rounded-full">State</span>
                     )}
                     {item.mode === "deep" && (
-                      <span className="text-xs bg-blue-100 text-blue-600 font-medium px-1.5 py-0.5 rounded-full">Deep</span>
+                      <span className="text-xs bg-cobalt-100 text-cobalt-600 font-medium px-1.5 py-0.5 rounded-full">Deep</span>
                     )}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
@@ -315,7 +351,7 @@ export default function ScraperPage() {
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-500">
                   <span>{item.result.found} found</span>
-                  <span className="text-emerald-600 font-medium">+{item.result.inserted} added</span>
+                  <span className="text-yolk-600 font-medium">+{item.result.inserted} added</span>
                   {item.result.skipped > 0 && (
                     <span className="text-slate-400">{item.result.skipped} skipped</span>
                   )}

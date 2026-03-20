@@ -1,4 +1,4 @@
-# Ortho Toolbox — Claude Code Context
+# ScheduleMyStaff — Claude Code Context
 
 ## What This App Is
 An internal sales CRM + Google Places scraper built for orthodontic practice outreach. It lets users scrape Google Maps for orthodontic practices (by city, zip, or entire state), auto-add them to a local database, and manage the outreach pipeline with statuses, notes, and filters.

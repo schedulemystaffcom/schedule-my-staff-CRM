@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
   const order = searchParams.get("order") ?? "desc";
 
   const state = searchParams.get("state");
+  const practiceType = searchParams.get("practiceType");
 
   const validSorts = ["name", "created_at", "status"];
   const safeSort = validSorts.includes(sort) ? sort : "created_at";
@@ -22,6 +23,11 @@ export async function GET(req: NextRequest) {
   if (status && status !== "all") {
     query += ` AND status = ?`;
     params.push(status);
+  }
+
+  if (practiceType && practiceType !== "all") {
+    query += ` AND practice_type = ?`;
+    params.push(practiceType);
   }
 
   if (state && state !== "all") {
@@ -64,8 +70,8 @@ export async function POST(req: NextRequest) {
 
   const id = randomUUID();
   db.prepare(`
-    INSERT INTO practices (id, name, phone, address, website, email, status, google_place_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO practices (id, name, phone, address, website, email, status, practice_type, google_place_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     body.name,
@@ -74,6 +80,7 @@ export async function POST(req: NextRequest) {
     body.website ?? null,
     body.email ?? null,
     body.status ?? "not_contacted",
+    body.practice_type ?? "unknown",
     body.google_place_id ?? null,
   );
 

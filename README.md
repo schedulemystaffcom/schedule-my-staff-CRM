@@ -1,4 +1,4 @@
-# The Ortho Toolbox
+# ScheduleMyStaff
 
 Internal sales CRM + practice scraper for orthodontic outreach.
 
@@ -37,7 +37,7 @@ This key lets the scraper search Google Maps for orthodontic practices.
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com).
 2. Click the project dropdown at the top → **New Project**. Name it anything
-   (e.g. "Ortho Toolbox").
+   (e.g. "ScheduleMyStaff").
 3. In the search bar at the top, search for **"Places API"** and click it.
 4. Click **Enable**.
 5. In the left sidebar, go to **APIs & Services → Credentials**.
