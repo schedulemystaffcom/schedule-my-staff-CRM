@@ -1,7 +1,7 @@
 # ScheduleMyStaff — Claude Code Context
 
 ## What This App Is
-An internal sales CRM + Google Places scraper built for orthodontic practice outreach. It lets users scrape Google Maps for orthodontic practices (by city, zip, or entire state), auto-add them to a local database, and manage the outreach pipeline with statuses, notes, and filters.
+An internal sales CRM + Google Places scraper built for orthodontic and dental practice outreach. It lets users scrape Google Maps for orthodontists, dentists, or both (by city, zip, or entire state), auto-add them to a local database, and manage the outreach pipeline with statuses, notes, and filters.
 
 **Not a public product — internal use only.**
 
@@ -10,10 +10,25 @@ An internal sales CRM + Google Places scraper built for orthodontic practice out
 ## Tech Stack
 - **Framework**: Next.js 14 App Router (TypeScript)
 - **Database**: SQLite via `better-sqlite3` (local file at `data/ortho.db`)
-- **Styling**: Tailwind CSS with custom component classes in `globals.css`
+- **Styling**: Tailwind CSS with custom brand tokens in `tailwind.config.js` and component classes in `globals.css`
 - **Fonts**: Inter (Google Fonts)
 - **Scraping**: Google Places API (New) — `places.googleapis.com/v1/places:searchText`
 - **Env var required**: `GOOGLE_PLACES_API_KEY` in `.env.local`
+
+---
+
+## Brand Colors (ScheduleMyStaff palette)
+Custom Tailwind tokens defined in `tailwind.config.js`:
+
+| Token | Hex | Usage |
+|---|---|---|
+| `cobalt-600` | `#2A4FB5` | Primary buttons, active states, links |
+| `cobalt-700` | `#172D6E` | Sidebar bg, active tabs, hover darken |
+| `cobalt-50/100` | `#EEF2FB / #dce6f7` | Light tints for selected rows, filter highlights |
+| `yolk-400` | `#F5C014` | Accent — sidebar active nav, dentist type, CTAs |
+| `yolk-50/200` | `#FEF8E7 / #FADA7A` | Light yellow tints |
+| `yolk-600` | `#C9950A` | Darker yolk for text on light backgrounds |
+| `ink` | `#1A1A2E` | Deep ink for headings and primary text |
 
 ---
 
@@ -26,16 +41,17 @@ src/
     globals.css                     # Global styles + component classes (.btn-primary, .card, .input)
     api/
       scrape/route.ts               # POST /api/scrape — scrapes Google Places & inserts practices
-      practices/route.ts            # GET /api/practices — list/filter/sort practices
-      practices/[id]/route.ts       # PATCH/DELETE /api/practices/[id] — update status, delete
-      practices/[id]/notes/route.ts # GET/POST /api/practices/[id]/notes — outreach notes
+      practices/route.ts            # GET/POST/DELETE /api/practices — list/filter/sort/add/bulk-delete
+      practices/[id]/route.ts       # PATCH/DELETE /api/practices/[id] — update status/contact, delete
+      practices/[id]/notes/route.ts # GET/POST/DELETE /api/practices/[id]/notes — outreach notes
       states/route.ts               # GET /api/states — list distinct states from DB
       cities/route.ts               # GET /api/cities — list distinct cities from DB
   components/
     Nav.tsx                         # Left sidebar navigation (CRM + Scraper links)
+    StatusBadge.tsx                 # Status pill badge component
   lib/
-    db.ts                           # SQLite connection + schema initialization
-    types.ts                        # TypeScript types: Status, Practice, OutreachNote, STATUS_LABELS, STATUS_COLORS
+    db.ts                           # SQLite connection + schema initialization + migrations
+    types.ts                        # TypeScript types: PracticeType, Status, Practice, OutreachNote, STATUS_LABELS, STATUS_COLORS
     stateCities.ts                  # STATE_NAMES, STATE_CITIES, resolveStateCode — used for state-mode scraping
 ```
 
@@ -53,6 +69,7 @@ src/
 | website | TEXT | |
 | email | TEXT | Manually added |
 | status | TEXT | See status workflow below |
+| practice_type | TEXT | `orthodontist` \| `dentist` \| `unknown` |
 | google_place_id | TEXT | Google Places place ID |
 | created_at | TEXT | ISO datetime |
 | updated_at | TEXT | ISO datetime |
@@ -68,27 +85,44 @@ src/
 
 ---
 
+## Practice Type System
+
+Each practice gets a `practice_type` at scrape time:
+
+| Type | How assigned |
+|---|---|
+| `orthodontist` | Name contains "ortho", "braces", or "invisalign" (when scraping orthodontists) |
+| `dentist` | Name contains "dent" or "dental" (when scraping dentists) |
+| `unknown` | Name is ambiguous (e.g. "Smile Center", "Family Care") — auto-gets `needs_review` status |
+
+---
+
 ## Status Workflow
 
 Statuses in order (defined in `src/lib/types.ts`):
 
 | Status | Color | How it gets set |
 |---|---|---|
-| `needs_review` | Yellow | Auto-assigned by scraper when practice name doesn't contain "ortho" — might be a dentist |
-| `not_contacted` | Slate | Default for confirmed ortho practices (name contains "ortho") |
-| `called` | Blue | Manual |
+| `needs_review` | Yolk yellow | Auto-assigned when practice name is ambiguous — might be wrong type |
+| `not_contacted` | Slate | Default for confirmed practices |
+| `called` | Cobalt blue | Manual |
 | `left_voicemail` | Amber | Manual |
 | `said_not_right_now` | Orange | Manual |
 | `not_interested` | Red | Manual |
 | `demo_scheduled` | Emerald | Manual |
 
-**Needs Review logic**: The scraper checks `name.toLowerCase().includes("ortho")`. If it doesn't match, the practice gets `needs_review` status so the user can manually check if it's actually an orthodontic practice. In the CRM "All" view, `needs_review` rows get a subtle yellow/amber highlight.
+**Needs Review logic**: The scraper checks the practice name against known orthodontic/dental keywords. If it doesn't match, it gets `needs_review` status. In the CRM "All" view, `needs_review` rows get a subtle yolk/yellow row tint.
 
 ---
 
 ## Scraper Details (`/api/scrape/route.ts`)
 
-**Modes:**
+**Practice types (choose one per scrape):**
+- **Orthodontists** — query: `"orthodontist orthodontic braces Invisalign [location]"`
+- **Dentists** — query: `"dentist dental family dentist general dentist [location]"`
+- **Both** — runs both searches back to back; phone deduplication handles overlaps
+
+**Search modes:**
 - **City / Zip** (`deepScan: false`) — single Google Places text search
 - **Deep Scan** (`deepScan: true`) — searches the city first, then re-searches every unique zip code found in the results (10–20× more results, 1–3 min)
 - **State mode** (`stateMode: true`) — iterates through all major cities in the state (from `stateCities.ts`), then does zip expansion on each. Takes 5–15 min for large states.
@@ -97,8 +131,6 @@ Statuses in order (defined in `src/lib/types.ts`):
 
 **State address filter**: When scraping in state mode, results whose address doesn't contain the target state abbreviation are dropped before insertion. This prevents Google from returning practices from geographically distant states.
 
-**Search query**: `"orthodontist orthodontic braces Invisalign [location]"` — cast wide to catch practices with ambiguous names.
-
 **API**: Google Places New API (`places.googleapis.com/v1/places:searchText`) with field mask for `places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri`.
 
 ---
@@ -106,15 +138,15 @@ Statuses in order (defined in `src/lib/types.ts`):
 ## CRM Page (`/page.tsx`)
 
 **Features:**
-- Filter by status (tab buttons at top — "All" shows all statuses)
+- **Practice type toggle** at top: All Types | Orthodontists | Dentists | Unknown
+- **Status filter tabs** below that: All | Needs Review | Not Contacted | Called | etc.
 - Filter by state and city (dropdowns, populated from DB)
-- Sort by: Date Added (newest/oldest), Name (A–Z / Z–A)
-- Row click opens a side panel (fixed overlay, doesn't shift content)
-- Side panel: edit status, add outreach notes with date + text
+- Sort by: Date Added (newest/oldest), Name (A–Z / Z–A), Status
+- Search by name, phone, or address
+- Row click opens a fixed side panel overlay (460px wide, does NOT shift table content)
+- Side panel: view practice type badge, edit status, edit contact info, add outreach notes
 - Bulk select + delete (with confirmation modal)
-- `needs_review` rows get amber row tint in "All" view
-
-**Side panel**: `position: fixed` overlay on the right side (460px wide). Does NOT shift the table — it overlays it.
+- `needs_review` rows get yolk tint in "All" view
 
 ---
 
@@ -127,7 +159,7 @@ npm run dev
 # Open http://localhost:3000
 ```
 
-See `SETUP.md` for detailed first-time setup instructions (for users who need step-by-step help).
+See `SETUP.md` for detailed first-time setup instructions.
 
 ---
 
@@ -137,11 +169,13 @@ See `SETUP.md` for detailed first-time setup instructions (for users who need st
 
 2. **better-sqlite3 native module**: Requires a native build. If `npm install` fails on a new machine, make sure Python and build tools are available (`xcode-select --install` on Mac).
 
-3. **Database is local**: `data/ortho.db` is gitignored. Each machine has its own database. To share data between machines, copy the `.db` file manually or set up a shared database (Supabase types are stubbed in `types.ts` if you want to migrate later).
+3. **Database is local**: `data/ortho.db` is gitignored. Each machine has its own database. To share data, copy the `.db` file manually.
 
-4. **Google Places API cost**: Each text search costs ~$0.032. Deep scan = ~10–20 API calls. State scan = potentially 100–300 calls. Monitor usage at: https://console.cloud.google.com/apis/api/places_backend.googleapis.com/
+4. **Google Places API cost**: Each text search costs ~$0.032. Deep scan = ~10–20 API calls. State scan = potentially 100–300 calls. Monitor at: https://console.cloud.google.com/apis/api/places_backend.googleapis.com/
 
-5. **State address filter is abbreviation-based**: Uses the 2-letter state code (e.g., "ID") to match against formatted addresses. Works reliably for US addresses.
+5. **State address filter is abbreviation-based**: Uses the 2-letter state code (e.g., "ID") to match against formatted addresses.
+
+6. **"Both" scrape type runs two full searches**: Orthodontist search runs first, then dentist. If a practice appears in both (e.g., an ortho that also does general dentistry), the second insert is skipped by phone deduplication.
 
 ---
 
