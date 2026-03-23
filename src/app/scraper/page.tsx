@@ -38,6 +38,51 @@ export default function ScraperPage() {
   const isStateMode = mode === "state";
   const canSubmit = isStateMode ? !!selectedState : !!location.trim();
 
+  const pollForResult = async (jobId: string) => {
+    const maxAttempts = 180; // 15 minutes at 5s intervals
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      try {
+        const res = await fetch(`/api/scrape?jobId=${jobId}`);
+        const job = await res.json();
+
+        if (job.status === "completed") {
+          const scrapeResult: ScrapeResult = {
+            found: job.found ?? 0,
+            inserted: job.inserted ?? 0,
+            skipped: job.skipped ?? 0,
+            location: job.location ?? "",
+            searches: job.searches ?? 0,
+            stateMode: job.state_mode ?? false,
+          };
+          setResult(scrapeResult);
+          setHistory((prev) => [
+            {
+              location: isStateMode ? (STATE_NAMES[selectedState] ?? selectedState) : location.trim(),
+              result: scrapeResult,
+              timestamp: new Date(),
+              mode,
+            },
+            ...prev.slice(0, 9),
+          ]);
+          setLoading(false);
+          return;
+        }
+
+        if (job.status === "failed") {
+          setError(job.error ?? "Scrape failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+        // Still pending or running — keep polling
+      } catch {
+        // Network hiccup — keep trying
+      }
+    }
+    setError("Scrape timed out. Please try again.");
+    setLoading(false);
+  };
+
   const handleScrape = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || loading) return;
@@ -61,22 +106,19 @@ export default function ScraperPage() {
 
       if (!res.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
+        setLoading(false);
         return;
       }
 
-      setResult(data);
-      setHistory((prev) => [
-        {
-          location: isStateMode ? (STATE_NAMES[selectedState] ?? selectedState) : location.trim(),
-          result: data,
-          timestamp: new Date(),
-          mode,
-        },
-        ...prev.slice(0, 9),
-      ]);
+      // Start polling for the background job result
+      if (data.jobId) {
+        pollForResult(data.jobId);
+      } else {
+        setError("Failed to start scrape job.");
+        setLoading(false);
+      }
     } catch {
       setError("Network error — please check your connection and try again.");
-    } finally {
       setLoading(false);
     }
   };
