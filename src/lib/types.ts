@@ -51,27 +51,3 @@ export interface OutreachNote {
   created_at: string;
 }
 
-// Supabase database type definitions
-export type Database = {
-  public: {
-    Tables: {
-      practices: {
-        Row: Practice;
-        Insert: Omit<Practice, "id" | "created_at" | "updated_at"> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Omit<Practice, "id" | "created_at">>;
-      };
-      outreach_notes: {
-        Row: OutreachNote;
-        Insert: Omit<OutreachNote, "id" | "created_at"> & {
-          id?: string;
-          created_at?: string;
-        };
-        Update: Partial<Omit<OutreachNote, "id" | "created_at">>;
-      };
-    };
-  };
-};

@@ -1,21 +1,24 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 
 // Returns unique 2-char state codes extracted from practice addresses.
-// Google Places addresses end with ", STATE ZIP, USA" so the state is
-// reliably at SUBSTR(address, LENGTH(address) - 12, 2).
+// Google Places addresses end with ", STATE ZIP, USA".
 export async function GET() {
-  const db = getDb();
-  const rows = db.prepare(`
-    SELECT DISTINCT SUBSTR(address, LENGTH(address) - 12, 2) AS state
-    FROM practices
-    WHERE address IS NOT NULL AND LENGTH(address) > 15
-    ORDER BY state
-  `).all() as { state: string }[];
+  const { data: rows, error } = await supabase
+    .from("practices")
+    .select("*");
 
-  const states = rows
-    .map((r) => r.state?.trim())
-    .filter((s): s is string => !!s && /^[A-Z]{2}$/.test(s));
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
+  const stateSet = new Set<string>();
+  for (const row of rows ?? []) {
+    if (!row.address || row.address.length <= 15) continue;
+    const m = row.address.match(/,\s*([A-Z]{2})\s+\d{5}/);
+    if (m) stateSet.add(m[1]);
+  }
+
+  const states = Array.from(stateSet).sort();
   return NextResponse.json(states);
 }

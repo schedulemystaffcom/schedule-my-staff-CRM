@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
-import { randomUUID } from "crypto";
+import { supabase } from "@/lib/supabase";
 import { resolveStateCode, STATE_NAMES, STATE_CITIES } from "@/lib/stateCities";
 import type { PracticeType } from "@/lib/types";
 
@@ -88,6 +87,50 @@ const NON_ORTHO_KEYWORDS = [
   "dental implant",
 ];
 
+/**
+ * Batch-fetch existing phones and google_place_ids from Supabase.
+ * Chunks `.in()` queries to avoid URL length limits (~300 per batch).
+ */
+async function fetchExistingKeys(
+  phones: string[],
+  placeIds: string[]
+): Promise<{ existingPhones: Set<string>; existingPlaceIds: Set<string> }> {
+  const existingPhones = new Set<string>();
+  const existingPlaceIds = new Set<string>();
+
+  const CHUNK_SIZE = 300;
+
+  // Batch-fetch existing phone numbers
+  for (let i = 0; i < phones.length; i += CHUNK_SIZE) {
+    const chunk = phones.slice(i, i + CHUNK_SIZE);
+    const { data } = await supabase
+      .from("practices")
+      .select("phone")
+      .in("phone", chunk);
+    if (data) {
+      for (const row of data) {
+        if (row.phone) existingPhones.add(row.phone);
+      }
+    }
+  }
+
+  // Batch-fetch existing google_place_ids
+  for (let i = 0; i < placeIds.length; i += CHUNK_SIZE) {
+    const chunk = placeIds.slice(i, i + CHUNK_SIZE);
+    const { data } = await supabase
+      .from("practices")
+      .select("google_place_id")
+      .in("google_place_id", chunk);
+    if (data) {
+      for (const row of data) {
+        if (row.google_place_id) existingPlaceIds.add(row.google_place_id);
+      }
+    }
+  }
+
+  return { existingPhones, existingPlaceIds };
+}
+
 export async function POST(req: NextRequest) {
   const { location, deepScan, stateMode, practiceType = "orthodontist" } = await req.json();
 
@@ -112,7 +155,6 @@ export async function POST(req: NextRequest) {
   const orthoQuery = (loc: string) => `orthodontist orthodontic braces Invisalign ${loc}`;
   const dentalQuery = (loc: string) => `dentist dental family dentist ${loc}`;
 
-  const db = getDb();
   const searchedQueries = new Set<string>();
   const allPlaces: PlacesResult[] = [];
 
@@ -185,14 +227,35 @@ export async function POST(req: NextRequest) {
       })
     : stateFiltered;
 
-  // Deduplicate by google_place_id
+  // Deduplicate by google_place_id within the scraped results
   const seen = new Map<string, PlacesResult>();
   for (const place of filtered) {
     const key = place.id ?? place.nationalPhoneNumber ?? place.displayName?.text ?? Math.random().toString();
     if (!seen.has(key)) seen.set(key, place);
   }
 
-  let inserted = 0;
+  // ── Batch dedup against existing DB records ────────────────────────────
+  const allPhones: string[] = [];
+  const allPlaceIds: string[] = [];
+  for (const place of seen.values()) {
+    if (place.nationalPhoneNumber) allPhones.push(place.nationalPhoneNumber);
+    if (place.id) allPlaceIds.push(place.id);
+  }
+
+  const { existingPhones, existingPlaceIds } = await fetchExistingKeys(allPhones, allPlaceIds);
+
+  // Build the list of new practices to insert
+  const newPractices: {
+    name: string;
+    phone: string | null;
+    address: string | null;
+    website: string | null;
+    email: string | null;
+    status: string;
+    practice_type: string;
+    google_place_id: string | null;
+  }[] = [];
+
   let skipped = 0;
 
   for (const place of seen.values()) {
@@ -202,36 +265,58 @@ export async function POST(req: NextRequest) {
     const phone = place.nationalPhoneNumber ?? null;
 
     // Skip duplicates by phone number
-    if (phone) {
-      const existing = db.prepare(`SELECT id FROM practices WHERE phone = ?`).get(phone);
-      if (existing) { skipped++; continue; }
+    if (phone && existingPhones.has(phone)) {
+      skipped++;
+      continue;
     }
 
-    // Also skip by google_place_id to catch phone-less duplicates
-    if (place.id) {
-      const existing = db.prepare(`SELECT id FROM practices WHERE google_place_id = ?`).get(place.id);
-      if (existing) { skipped++; continue; }
+    // Skip duplicates by google_place_id
+    if (place.id && existingPlaceIds.has(place.id)) {
+      skipped++;
+      continue;
     }
 
     const type = determinePracticeType(name);
     const status = type === "unknown" ? "needs_review" : "not_contacted";
 
-    db.prepare(`
-      INSERT INTO practices (id, name, phone, address, website, email, status, practice_type, google_place_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      randomUUID(),
+    newPractices.push({
       name,
       phone,
-      place.formattedAddress ?? null,
-      place.websiteUri ?? null,
-      null,
+      address: place.formattedAddress ?? null,
+      website: place.websiteUri ?? null,
+      email: null,
       status,
-      type,
-      place.id ?? null,
-    );
+      practice_type: type,
+      google_place_id: place.id ?? null,
+    });
+  }
 
-    inserted++;
+  // Batch insert all new practices (Supabase accepts arrays)
+  let inserted = 0;
+  if (newPractices.length > 0) {
+    // Insert in chunks of 500 to avoid payload size limits
+    const INSERT_CHUNK = 500;
+    for (let i = 0; i < newPractices.length; i += INSERT_CHUNK) {
+      const chunk = newPractices.slice(i, i + INSERT_CHUNK);
+      const { data, error } = await supabase
+        .from("practices")
+        .insert(chunk)
+        .select("id");
+
+      if (error) {
+        // If batch fails (e.g. unique constraint race condition),
+        // fall back to one-by-one insert
+        for (const practice of chunk) {
+          const { error: singleErr } = await supabase
+            .from("practices")
+            .insert(practice);
+          if (!singleErr) inserted++;
+          else skipped++;
+        }
+      } else {
+        inserted += data?.length ?? chunk.length;
+      }
+    }
   }
 
   return NextResponse.json({

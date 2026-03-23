@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const db = getDb();
-  const practice = db.prepare(`SELECT * FROM practices WHERE id = ?`).get(params.id);
+  const { data: practice, error } = await supabase
+    .from("practices")
+    .select("*")
+    .eq("id", params.id)
+    .single();
 
-  if (!practice) {
+  if (error || !practice) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -19,7 +22,6 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const db = getDb();
   const body = await req.json();
 
   const allowed = ["name", "phone", "address", "website", "email", "status"];
@@ -32,12 +34,18 @@ export async function PATCH(
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
-  const setClauses = Object.keys(updates).map((k) => `${k} = ?`).join(", ");
-  const values = [...Object.values(updates), new Date().toISOString(), params.id];
+  // updated_at is handled by the PostgreSQL trigger
+  const { data: practice, error } = await supabase
+    .from("practices")
+    .update(updates)
+    .eq("id", params.id)
+    .select()
+    .single();
 
-  db.prepare(`UPDATE practices SET ${setClauses}, updated_at = ? WHERE id = ?`).run(...values);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  const practice = db.prepare(`SELECT * FROM practices WHERE id = ?`).get(params.id);
   return NextResponse.json(practice);
 }
 
@@ -45,7 +53,14 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const db = getDb();
-  db.prepare(`DELETE FROM practices WHERE id = ?`).run(params.id);
+  const { error } = await supabase
+    .from("practices")
+    .delete()
+    .eq("id", params.id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
   return new NextResponse(null, { status: 204 });
 }

@@ -1,7 +1,7 @@
 # ScheduleMyStaff — Claude Code Context
 
 ## What This App Is
-An internal sales CRM + Google Places scraper built for orthodontic and dental practice outreach. It lets users scrape Google Maps for orthodontists, dentists, or both (by city, zip, or entire state), auto-add them to a local database, and manage the outreach pipeline with statuses, notes, and filters.
+An internal sales CRM + Google Places scraper built for orthodontic and dental practice outreach. It lets users scrape Google Maps for orthodontists, dentists, or both (by city, zip, or entire state), auto-add them to Supabase, and manage the outreach pipeline with statuses, notes, and filters.
 
 **Not a public product — internal use only.**
 
@@ -9,11 +9,12 @@ An internal sales CRM + Google Places scraper built for orthodontic and dental p
 
 ## Tech Stack
 - **Framework**: Next.js 14 App Router (TypeScript)
-- **Database**: SQLite via `better-sqlite3` (local file at `data/ortho.db`)
+- **Database**: Supabase (PostgreSQL) — hosted at `fdkabfyoahsbczbepfnt.supabase.co`
+- **Hosting**: Netlify (auto-deploys from GitHub `schedulemystaffcom/schedule-my-staff-CRM`)
 - **Styling**: Tailwind CSS with custom brand tokens in `tailwind.config.js` and component classes in `globals.css`
 - **Fonts**: Inter (Google Fonts)
 - **Scraping**: Google Places API (New) — `places.googleapis.com/v1/places:searchText`
-- **Env var required**: `GOOGLE_PLACES_API_KEY` in `.env.local`
+- **Env vars required**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GOOGLE_PLACES_API_KEY`
 
 ---
 
@@ -50,8 +51,8 @@ src/
     Nav.tsx                         # Left sidebar navigation (CRM + Scraper links)
     StatusBadge.tsx                 # Status pill badge component
   lib/
-    db.ts                           # SQLite connection + schema initialization + migrations
-    types.ts                        # TypeScript types: PracticeType, Status, Practice, OutreachNote, STATUS_LABELS, STATUS_COLORS
+    supabase.ts                     # Supabase client (typed with Database schema)
+    types.ts                        # TypeScript types: PracticeType, Status, Practice, OutreachNote, STATUS_LABELS, STATUS_COLORS, Database
     stateCities.ts                  # STATE_NAMES, STATE_CITIES, resolveStateCode — used for state-mode scraping
 ```
 
@@ -167,9 +168,7 @@ See `SETUP.md` for detailed first-time setup instructions.
 
 1. **CSS 404 after adding API routes**: If you add a new file under `src/app/api/` and the browser starts getting 404 on CSS/JS, fully kill and restart `npm run dev`. Next.js hot reload sometimes breaks on new route additions.
 
-2. **better-sqlite3 native module**: Requires a native build. If `npm install` fails on a new machine, make sure Python and build tools are available (`xcode-select --install` on Mac).
-
-3. **Database is local**: `data/ortho.db` is gitignored. Each machine has its own database. To share data, copy the `.db` file manually.
+2. **Database is Supabase**: All data is stored in the remote Supabase PostgreSQL database. No local database files needed.
 
 4. **Google Places API cost**: Each text search costs ~$0.032. Deep scan = ~10–20 API calls. State scan = potentially 100–300 calls. Monitor at: https://console.cloud.google.com/apis/api/places_backend.googleapis.com/
 

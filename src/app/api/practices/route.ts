@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
-import { randomUUID } from "crypto";
+import { supabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
-  const db = getDb();
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
   const search = searchParams.get("search");
@@ -15,75 +13,82 @@ export async function GET(req: NextRequest) {
 
   const validSorts = ["name", "created_at", "status"];
   const safeSort = validSorts.includes(sort) ? sort : "created_at";
-  const safeOrder = order === "asc" ? "ASC" : "DESC";
 
-  let query = `SELECT * FROM practices WHERE 1=1`;
-  const params: unknown[] = [];
+  let query = supabase.from("practices").select("*");
 
   if (status && status !== "all") {
-    query += ` AND status = ?`;
-    params.push(status);
+    query = query.eq("status", status);
   }
 
   if (practiceType && practiceType !== "all") {
-    query += ` AND practice_type = ?`;
-    params.push(practiceType);
+    query = query.eq("practice_type", practiceType);
   }
 
   if (state && state !== "all") {
-    query += ` AND address LIKE ?`;
-    params.push(`%, ${state} %`);
+    query = query.ilike("address", `%, ${state} %`);
   }
 
   const city = searchParams.get("city");
   if (city && city !== "all") {
-    // Match "..., CITY, STATE..." pattern
-    query += ` AND address LIKE ?`;
-    params.push(`%, ${city}, %`);
+    query = query.ilike("address", `%, ${city}, %`);
   }
 
   if (search) {
-    query += ` AND (name LIKE ? OR address LIKE ? OR phone LIKE ?)`;
-    const s = `%${search}%`;
-    params.push(s, s, s);
+    // Use ilike for case-insensitive search (PostgreSQL LIKE is case-sensitive)
+    query = query.or(
+      `name.ilike.%${search}%,address.ilike.%${search}%,phone.ilike.%${search}%`
+    );
   }
 
-  query += ` ORDER BY ${safeSort} ${safeOrder}`;
+  query = query.order(safeSort, { ascending: order === "asc" });
 
-  const practices = db.prepare(query).all(...params);
+  const { data: practices, error } = await query;
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
   return NextResponse.json(practices);
 }
 
 export async function DELETE(req: NextRequest) {
-  const db = getDb();
   const body = await req.json();
   const ids: string[] = Array.isArray(body.ids) ? body.ids : [];
   if (ids.length === 0) return NextResponse.json({ deleted: 0 });
-  const placeholders = ids.map(() => "?").join(",");
-  const result = db.prepare(`DELETE FROM practices WHERE id IN (${placeholders})`).run(...ids);
-  return NextResponse.json({ deleted: (result as { changes: number }).changes });
+
+  const { error, count } = await supabase
+    .from("practices")
+    .delete({ count: "exact" })
+    .in("id", ids);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ deleted: count ?? 0 });
 }
 
 export async function POST(req: NextRequest) {
-  const db = getDb();
   const body = await req.json();
 
-  const id = randomUUID();
-  db.prepare(`
-    INSERT INTO practices (id, name, phone, address, website, email, status, practice_type, google_place_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    id,
-    body.name,
-    body.phone ?? null,
-    body.address ?? null,
-    body.website ?? null,
-    body.email ?? null,
-    body.status ?? "not_contacted",
-    body.practice_type ?? "unknown",
-    body.google_place_id ?? null,
-  );
+  const { data: practice, error } = await supabase
+    .from("practices")
+    .insert({
+      name: body.name,
+      phone: body.phone ?? null,
+      address: body.address ?? null,
+      website: body.website ?? null,
+      email: body.email ?? null,
+      status: body.status ?? "not_contacted",
+      practice_type: body.practice_type ?? "unknown",
+      google_place_id: body.google_place_id ?? null,
+    })
+    .select()
+    .single();
 
-  const practice = db.prepare(`SELECT * FROM practices WHERE id = ?`).get(id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
   return NextResponse.json(practice, { status: 201 });
 }
