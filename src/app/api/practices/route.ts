@@ -56,16 +56,27 @@ export async function DELETE(req: NextRequest) {
   const ids: string[] = Array.isArray(body.ids) ? body.ids : [];
   if (ids.length === 0) return NextResponse.json({ deleted: 0 });
 
-  const { error, count } = await supabase
-    .from("practices")
-    .delete({ count: "exact" })
-    .in("id", ids);
+  // Chunk deletes to avoid Supabase .in() URL length limits
+  const CHUNK = 100;
+  let totalDeleted = 0;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const chunk = ids.slice(i, i + CHUNK);
+    const { error, count } = await supabase
+      .from("practices")
+      .delete({ count: "exact" })
+      .in("id", chunk);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message, deleted: totalDeleted },
+        { status: 500 }
+      );
+    }
+    totalDeleted += count ?? 0;
   }
 
-  return NextResponse.json({ deleted: count ?? 0 });
+  return NextResponse.json({ deleted: totalDeleted });
 }
 
 export async function POST(req: NextRequest) {
