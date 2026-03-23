@@ -140,18 +140,26 @@ async function fetchAllPages(query: string, apiKey: string): Promise<PlacesResul
   return places;
 }
 
-function determinePracticeType(name: string): "orthodontist" | "dentist" | "unknown" {
+function determinePracticeType(name: string, types?: string[]): "orthodontist" | "dentist" | "unknown" {
   const n = name.toLowerCase();
-  if (n.includes("ortho")) return "orthodontist";
+  if (ORTHO_KEYWORDS.some((kw) => n.includes(kw))) return "orthodontist";
+  if (types?.some((t) => t.toLowerCase().includes("orthodontist"))) return "orthodontist";
   if (n.includes("dent") || n.includes(" dds") || n.includes(" dmd")) return "dentist";
   return "unknown";
 }
 
-const NON_ORTHO_KEYWORDS = [
-  "endodontic","endodontist","periodontic","periodontist","denture","denturist",
-  "oral surgery","oral surgeon","family dentist","family dental","general dentist",
-  "general dental","pediatric dent","kids dent","children's dent","cosmetic dentist","dental implant",
+const ORTHO_KEYWORDS = [
+  "ortho","orthodontic","orthodontics","orthodontist","braces","invisalign","aligner",
 ];
+
+function isOrthoPlace(place: PlacesResult): boolean {
+  const name = (place.displayName?.text ?? "").toLowerCase();
+  // Check name for ortho keywords
+  if (ORTHO_KEYWORDS.some((kw) => name.includes(kw))) return true;
+  // Check Google Places types array
+  if (place.types?.some((t) => t.toLowerCase().includes("orthodontist"))) return true;
+  return false;
+}
 
 async function fetchExistingKeys(phones: string[], placeIds: string[]) {
   const existingPhones = new Set<string>();
@@ -253,14 +261,9 @@ export default async (req: Request, context: Context) => {
         })
       : allPlaces;
 
-    // Ortho-only filter
+    // Ortho-only filter — must have ortho keywords in name or Google types
     const filtered = practiceType === "orthodontist"
-      ? stateFiltered.filter((place) => {
-          const name = (place.displayName?.text ?? "").toLowerCase();
-          if (name.includes("ortho")) return true;
-          if (NON_ORTHO_KEYWORDS.some((kw) => name.includes(kw))) return false;
-          return true;
-        })
+      ? stateFiltered.filter((place) => isOrthoPlace(place))
       : stateFiltered;
 
     // Deduplicate within results
@@ -288,7 +291,7 @@ export default async (req: Request, context: Context) => {
       const phone = place.nationalPhoneNumber ?? null;
       if (phone && existingPhones.has(phone)) { skipped++; continue; }
       if (place.id && existingPlaceIds.has(place.id)) { skipped++; continue; }
-      const type = determinePracticeType(name);
+      const type = determinePracticeType(name, place.types);
       const status = type === "unknown" ? "needs_review" : "not_contacted";
       newPractices.push({
         name, phone,
