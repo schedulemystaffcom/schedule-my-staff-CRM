@@ -7,7 +7,8 @@ export type Status =
   | "left_voicemail"
   | "said_not_right_now"
   | "not_interested"
-  | "demo_scheduled";
+  | "demo_scheduled"
+  | "bad_lead";
 
 export const STATUS_LABELS: Record<Status, string> = {
   needs_review:       "Needs Review",
@@ -17,6 +18,7 @@ export const STATUS_LABELS: Record<Status, string> = {
   said_not_right_now: "Said Not Right Now",
   not_interested:     "Not Interested",
   demo_scheduled:     "Demo Scheduled",
+  bad_lead:           "Bad Lead",
 };
 
 export const STATUS_COLORS: Record<Status, string> = {
@@ -27,6 +29,7 @@ export const STATUS_COLORS: Record<Status, string> = {
   said_not_right_now: "bg-orange-100 text-orange-700",
   not_interested:     "bg-red-100 text-red-700",
   demo_scheduled:     "bg-emerald-100 text-emerald-700",
+  bad_lead:           "bg-stone-200 text-stone-600 line-through",
 };
 
 export interface Practice {

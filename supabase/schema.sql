@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS practices (
                                 'left_voicemail',
                                 'said_not_right_now',
                                 'not_interested',
-                                'demo_scheduled'
+                                'demo_scheduled',
+                                'bad_lead'
                               )),
   practice_type   TEXT        NOT NULL DEFAULT 'unknown',
   google_place_id TEXT,

@@ -7,7 +7,7 @@ import { STATUS_LABELS, type Practice, type OutreachNote, type Status, type Prac
 
 const ALL_STATUSES: Status[] = [
   "needs_review", "not_contacted", "called", "left_voicemail",
-  "said_not_right_now", "not_interested", "demo_scheduled",
+  "said_not_right_now", "not_interested", "demo_scheduled", "bad_lead",
 ];
 
 const STATUS_BTN: Record<Status, { active: string; inactive: string }> = {
@@ -18,6 +18,7 @@ const STATUS_BTN: Record<Status, { active: string; inactive: string }> = {
   said_not_right_now: { active: "bg-orange-500 border-orange-500 text-white",         inactive: "border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50" },
   not_interested:     { active: "bg-red-500 border-red-500 text-white",               inactive: "border-slate-200 text-slate-600 hover:border-red-300 hover:bg-red-50" },
   demo_scheduled:     { active: "bg-emerald-600 border-emerald-600 text-white",       inactive: "border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50" },
+  bad_lead:           { active: "bg-stone-500 border-stone-500 text-white",            inactive: "border-slate-200 text-slate-600 hover:border-stone-300 hover:bg-stone-50" },
 };
 
 type SortField = "name" | "created_at" | "status";

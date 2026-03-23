@@ -18,6 +18,7 @@ const ALL_STATUSES: Status[] = [
   "said_not_right_now",
   "not_interested",
   "demo_scheduled",
+  "bad_lead",
 ];
 
 function today() {
