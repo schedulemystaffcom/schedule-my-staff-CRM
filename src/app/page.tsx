@@ -6,19 +6,16 @@ import StatusBadge from "@/components/StatusBadge";
 import { STATUS_LABELS, type Practice, type OutreachNote, type Status, type PracticeType } from "@/lib/types";
 
 const ALL_STATUSES: Status[] = [
-  "needs_review", "not_contacted", "called", "left_voicemail",
-  "said_not_right_now", "not_interested", "demo_scheduled", "bad_lead",
+  "not_contacted", "called", "call_back", "not_interested", "demo_scheduled", "bad_lead",
 ];
 
 const STATUS_BTN: Record<Status, { active: string; inactive: string }> = {
-  needs_review:       { active: "bg-yolk-400 border-yolk-400 text-ink",              inactive: "border-slate-200 text-slate-600 hover:border-yolk-200 hover:bg-yolk-50" },
-  not_contacted:      { active: "bg-slate-700 border-slate-700 text-white",           inactive: "border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-slate-50" },
-  called:             { active: "bg-cobalt-600 border-cobalt-600 text-white",         inactive: "border-slate-200 text-slate-600 hover:border-cobalt-200 hover:bg-cobalt-50" },
-  left_voicemail:     { active: "bg-amber-500 border-amber-500 text-white",           inactive: "border-slate-200 text-slate-600 hover:border-amber-300 hover:bg-amber-50" },
-  said_not_right_now: { active: "bg-orange-500 border-orange-500 text-white",         inactive: "border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50" },
-  not_interested:     { active: "bg-red-500 border-red-500 text-white",               inactive: "border-slate-200 text-slate-600 hover:border-red-300 hover:bg-red-50" },
-  demo_scheduled:     { active: "bg-emerald-600 border-emerald-600 text-white",       inactive: "border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50" },
-  bad_lead:           { active: "bg-stone-500 border-stone-500 text-white",            inactive: "border-slate-200 text-slate-600 hover:border-stone-300 hover:bg-stone-50" },
+  not_contacted:  { active: "bg-slate-700 border-slate-700 text-white",           inactive: "border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-slate-50" },
+  called:         { active: "bg-cobalt-600 border-cobalt-600 text-white",         inactive: "border-slate-200 text-slate-600 hover:border-cobalt-200 hover:bg-cobalt-50" },
+  call_back:      { active: "bg-yolk-400 border-yolk-400 text-ink",              inactive: "border-slate-200 text-slate-600 hover:border-yolk-200 hover:bg-yolk-50" },
+  not_interested: { active: "bg-red-500 border-red-500 text-white",               inactive: "border-slate-200 text-slate-600 hover:border-red-300 hover:bg-red-50" },
+  demo_scheduled: { active: "bg-emerald-600 border-emerald-600 text-white",       inactive: "border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50" },
+  bad_lead:       { active: "bg-stone-500 border-stone-500 text-white",            inactive: "border-slate-200 text-slate-600 hover:border-stone-300 hover:bg-stone-50" },
 };
 
 type SortField = "name" | "created_at" | "status" | "google_review_count";
@@ -494,8 +491,6 @@ export default function DashboardPage() {
                             ? "bg-cobalt-50"
                             : panel?.id === p.id
                             ? "bg-cobalt-50"
-                            : activeStatus === "all" && p.status === "needs_review"
-                            ? "bg-yolk-50 hover:bg-yolk-50/80"
                             : "hover:bg-slate-50"
                         }`}
                       >

@@ -13,11 +13,9 @@ CREATE TABLE IF NOT EXISTS practices (
   email           TEXT,
   status          TEXT        NOT NULL DEFAULT 'not_contacted'
                               CHECK (status IN (
-                                'needs_review',
                                 'not_contacted',
                                 'called',
-                                'left_voicemail',
-                                'said_not_right_now',
+                                'call_back',
                                 'not_interested',
                                 'demo_scheduled',
                                 'bad_lead'

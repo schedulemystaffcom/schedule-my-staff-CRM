@@ -318,7 +318,7 @@ export default async (req: Request, context: Context) => {
         }
       }
 
-      const status = type === "unknown" ? "needs_review" : "not_contacted";
+      const status = "not_contacted";
       newPractices.push({
         name, phone,
         address: place.formattedAddress ?? null,

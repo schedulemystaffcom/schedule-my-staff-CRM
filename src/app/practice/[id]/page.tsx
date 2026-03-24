@@ -14,8 +14,7 @@ import {
 const ALL_STATUSES: Status[] = [
   "not_contacted",
   "called",
-  "left_voicemail",
-  "said_not_right_now",
+  "call_back",
   "not_interested",
   "demo_scheduled",
   "bad_lead",
