@@ -42,6 +42,8 @@ export interface Practice {
   status: Status;
   practice_type: PracticeType;
   google_place_id: string | null;
+  google_rating: number | null;
+  google_review_count: number | null;
   created_at: string;
   updated_at: string;
 }

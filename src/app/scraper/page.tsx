@@ -34,6 +34,8 @@ export default function ScraperPage() {
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
+  const [minReviewsOrtho, setMinReviewsOrtho] = useState(150);
+  const [minReviewsDental, setMinReviewsDental] = useState(250);
 
   const isStateMode = mode === "state";
   const canSubmit = isStateMode ? !!selectedState : !!location.trim();
@@ -92,8 +94,8 @@ export default function ScraperPage() {
     setResult(null);
 
     const payload = isStateMode
-      ? { location: selectedState, stateMode: true, deepScan: false, practiceType }
-      : { location: location.trim(), stateMode: false, deepScan: mode === "deep", practiceType };
+      ? { location: selectedState, stateMode: true, deepScan: false, practiceType, minReviewsOrtho, minReviewsDental }
+      : { location: location.trim(), stateMode: false, deepScan: mode === "deep", practiceType, minReviewsOrtho, minReviewsDental };
 
     try {
       const res = await fetch("/api/scrape", {
@@ -277,6 +279,42 @@ export default function ScraperPage() {
             {mode === "deep"  && "Searches the city first, then re-searches every zip code found — typically 10–20× more results. Takes 1–3 minutes."}
             {mode === "state" && "Searches all major metro areas in the state, then expands by every zip code discovered. May take 5–15 minutes for large states."}
           </p>
+
+          {/* Minimum review thresholds */}
+          <div>
+            <p className="block text-sm font-medium text-slate-700 mb-2">Minimum Google reviews</p>
+            <p className="text-xs text-slate-400 mb-2">Only practices above these thresholds will be added to the CRM.</p>
+            <div className="grid grid-cols-2 gap-3">
+              {(practiceType === "orthodontist" || practiceType === "both") && (
+                <div>
+                  <label htmlFor="minOrtho" className="text-xs text-slate-500 mb-1 block">Orthodontists</label>
+                  <input
+                    id="minOrtho"
+                    type="number"
+                    min={0}
+                    value={minReviewsOrtho}
+                    onChange={(e) => setMinReviewsOrtho(Number(e.target.value) || 0)}
+                    disabled={loading}
+                    className="input text-sm"
+                  />
+                </div>
+              )}
+              {(practiceType === "dentist" || practiceType === "both") && (
+                <div>
+                  <label htmlFor="minDental" className="text-xs text-slate-500 mb-1 block">Dentists</label>
+                  <input
+                    id="minDental"
+                    type="number"
+                    min={0}
+                    value={minReviewsDental}
+                    onChange={(e) => setMinReviewsDental(Number(e.target.value) || 0)}
+                    disabled={loading}
+                    className="input text-sm"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </form>
       </div>
 

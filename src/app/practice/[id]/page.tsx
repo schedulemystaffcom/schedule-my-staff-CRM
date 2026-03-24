@@ -280,6 +280,20 @@ export default function PracticeDetailPage() {
                   href={practice.website ?? undefined}
                   external
                 />
+                {practice.google_review_count != null && (
+                  <div className="sm:col-span-2 flex items-center gap-4 pt-2 border-t border-slate-100">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 mb-0.5">Google Rating</p>
+                      <p className="text-sm text-slate-800">
+                        <span className="text-amber-500">★</span> {practice.google_rating?.toFixed(1) ?? "–"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 mb-0.5">Reviews</p>
+                      <p className="text-sm text-slate-800">{practice.google_review_count.toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -84,6 +84,8 @@ All tables live in the `public` schema with RLS enabled (permissive policies —
 | status | TEXT NOT NULL | CHECK constraint — see status workflow below |
 | practice_type | TEXT NOT NULL | `orthodontist` \| `dentist` \| `unknown` (default: `unknown`) |
 | google_place_id | TEXT | Partial unique index (secondary dedup key) |
+| google_rating | REAL | Google Places star rating (0.0–5.0) |
+| google_review_count | INTEGER | Total number of Google reviews |
 | created_at | TIMESTAMPTZ | Default `NOW()` |
 | updated_at | TIMESTAMPTZ | Auto-updated via PostgreSQL trigger `set_updated_at()` |
 
@@ -140,6 +142,14 @@ The scraper uses a **background job pattern** to handle long-running scrapes on 
 4. **Frontend** polls `GET /api/scrape?jobId=xxx` every 5 seconds until the job completes
 
 This pattern is necessary because Netlify serverless functions have a ~10-26s timeout, but state-wide scrapes take 5-15 minutes. Background functions have a **15-minute timeout**.
+
+### Review-Based Filtering
+The scraper filters out small practices by Google review count. Default thresholds (editable in UI):
+- **Orthodontists**: 150+ reviews minimum
+- **Dentists**: 250+ reviews minimum
+- **Unknown type**: uses the lower of the two thresholds
+
+The `google_rating` and `google_review_count` fields are stored on every scraped practice. The CRM table displays these and supports sorting by review count.
 
 ### Deduplication Strategy
 - **Batch prefetch**: Before inserting, fetch all existing phones and google_place_ids in 2 queries (chunked at 300 per `.in()` call)

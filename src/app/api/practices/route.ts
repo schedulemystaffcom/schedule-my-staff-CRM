@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const practiceType = searchParams.get("practiceType");
 
-  const validSorts = ["name", "created_at", "status"];
+  const validSorts = ["name", "created_at", "status", "google_review_count"];
   const safeSort = validSorts.includes(sort) ? sort : "created_at";
 
   let query = supabase.from("practices").select("*");

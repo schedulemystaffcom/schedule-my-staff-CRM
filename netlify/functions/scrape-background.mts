@@ -13,6 +13,8 @@ const FIELD_MASK = [
   "places.nationalPhoneNumber",
   "places.websiteUri",
   "places.types",
+  "places.rating",
+  "places.userRatingCount",
   "nextPageToken",
 ].join(",");
 
@@ -23,6 +25,8 @@ interface PlacesResult {
   nationalPhoneNumber?: string;
   websiteUri?: string;
   types?: string[];
+  rating?: number;
+  userRatingCount?: number;
 }
 
 interface PlacesResponse {
@@ -184,7 +188,8 @@ async function fetchExistingKeys(phones: string[], placeIds: string[]) {
 export default async (req: Request, context: Context) => {
   // Background functions return 202 immediately — this code runs async
   const body = await req.json();
-  const { jobId, location, deepScan, stateMode, practiceType = "orthodontist" } = body;
+  const { jobId, location, deepScan, stateMode, practiceType = "orthodontist",
+    minReviewsOrtho = 0, minReviewsDental = 0 } = body;
 
   if (!jobId || !location) {
     console.error("Missing jobId or location");
@@ -284,6 +289,7 @@ export default async (req: Request, context: Context) => {
 
     const newPractices: any[] = [];
     let skipped = 0;
+    let filteredByReviews = 0;
 
     for (const place of Array.from(seen.values())) {
       const name = place.displayName?.text;
@@ -292,6 +298,26 @@ export default async (req: Request, context: Context) => {
       if (phone && existingPhones.has(phone)) { skipped++; continue; }
       if (place.id && existingPlaceIds.has(place.id)) { skipped++; continue; }
       const type = determinePracticeType(name, place.types);
+      const reviewCount = place.userRatingCount ?? 0;
+
+      // Apply review count thresholds by practice type
+      if (type === "orthodontist" && minReviewsOrtho > 0 && reviewCount < minReviewsOrtho) {
+        filteredByReviews++; skipped++; continue;
+      }
+      if (type === "dentist" && minReviewsDental > 0 && reviewCount < minReviewsDental) {
+        filteredByReviews++; skipped++; continue;
+      }
+      // For "unknown" type: apply the lower of the two thresholds (if any are set)
+      if (type === "unknown") {
+        const minThreshold = Math.min(
+          minReviewsOrtho > 0 ? minReviewsOrtho : Infinity,
+          minReviewsDental > 0 ? minReviewsDental : Infinity,
+        );
+        if (minThreshold < Infinity && reviewCount < minThreshold) {
+          filteredByReviews++; skipped++; continue;
+        }
+      }
+
       const status = type === "unknown" ? "needs_review" : "not_contacted";
       newPractices.push({
         name, phone,
@@ -300,6 +326,8 @@ export default async (req: Request, context: Context) => {
         email: null, status,
         practice_type: type,
         google_place_id: place.id ?? null,
+        google_rating: place.rating ?? null,
+        google_review_count: place.userRatingCount ?? null,
       });
     }
 

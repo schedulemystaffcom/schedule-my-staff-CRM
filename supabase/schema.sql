@@ -23,9 +23,11 @@ CREATE TABLE IF NOT EXISTS practices (
                                 'bad_lead'
                               )),
   practice_type   TEXT        NOT NULL DEFAULT 'unknown',
-  google_place_id TEXT,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  google_place_id      TEXT,
+  google_rating        REAL,
+  google_review_count  INTEGER,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Partial unique index: two practices can both have NULL phone,

@@ -3,7 +3,8 @@ import { supabase } from "@/lib/supabase";
 
 // POST /api/scrape — Creates a scrape job and triggers the background function
 export async function POST(req: NextRequest) {
-  const { location, deepScan, stateMode, practiceType = "orthodontist" } = await req.json();
+  const { location, deepScan, stateMode, practiceType = "orthodontist",
+    minReviewsOrtho = 0, minReviewsDental = 0 } = await req.json();
 
   if (!location || typeof location !== "string" || !location.trim()) {
     return NextResponse.json(
@@ -48,6 +49,8 @@ export async function POST(req: NextRequest) {
         deepScan: !!deepScan,
         stateMode: !!stateMode,
         practiceType,
+        minReviewsOrtho: Number(minReviewsOrtho) || 0,
+        minReviewsDental: Number(minReviewsDental) || 0,
       }),
     }).catch((err) => {
       console.error("Failed to invoke background function:", err);
