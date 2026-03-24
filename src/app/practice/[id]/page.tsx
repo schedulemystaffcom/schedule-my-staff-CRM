@@ -154,7 +154,7 @@ export default function PracticeDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-          <svg className="animate-spin w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin w-6 h-6 text-cobalt-600" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
@@ -304,7 +304,7 @@ export default function PracticeDetailPage() {
             <div className="flex items-center gap-3 mb-4">
               <StatusBadge status={practice.status} />
               {statusSaving && (
-                <svg className="animate-spin w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin w-4 h-4 text-cobalt-600" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
@@ -499,7 +499,7 @@ function ContactField({
             href={href}
             target={external ? "_blank" : undefined}
             rel={external ? "noopener noreferrer" : undefined}
-            className="text-sm text-blue-600 hover:underline break-all"
+            className="text-sm text-cobalt-600 hover:underline break-all"
           >
             {value}
           </a>

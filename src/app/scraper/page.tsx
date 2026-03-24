@@ -418,7 +418,7 @@ export default function ScraperPage() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-slate-700">{item.location}</p>
                     {item.mode === "state" && (
-                      <span className="text-xs bg-purple-100 text-purple-600 font-medium px-1.5 py-0.5 rounded-full">State</span>
+                      <span className="text-xs bg-yolk-200 text-yolk-800 font-medium px-1.5 py-0.5 rounded-full">State</span>
                     )}
                     {item.mode === "deep" && (
                       <span className="text-xs bg-cobalt-100 text-cobalt-600 font-medium px-1.5 py-0.5 rounded-full">Deep</span>

@@ -24,7 +24,7 @@ export const STATUS_LABELS: Record<Status, string> = {
 export const STATUS_COLORS: Record<Status, string> = {
   needs_review:       "bg-yellow-200 text-yellow-800 font-semibold",
   not_contacted:      "bg-slate-100 text-slate-600",
-  called:             "bg-blue-100 text-blue-700",
+  called:             "bg-cobalt-50 text-cobalt-600",
   left_voicemail:     "bg-amber-100 text-amber-700",
   said_not_right_now: "bg-orange-100 text-orange-700",
   not_interested:     "bg-red-100 text-red-700",

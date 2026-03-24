@@ -9,21 +9,31 @@ module.exports = {
     extend: {
       colors: {
         cobalt: {
-          50:  "#EEF2FB",
-          100: "#dce6f7",
-          200: "#A8BEE8",
-          500: "#4169E1",
-          600: "#2A4FB5",
-          700: "#172D6E",
+          50:  "#EAF1F7",
+          100: "#D0E1EE",
+          200: "#86BBD8",   // Sky Blue
+          500: "#4A7DA8",
+          600: "#33658A",   // Core Blue — primary buttons, links
+          700: "#2F4858",   // Deep Navy — sidebar, dark backgrounds
         },
         yolk: {
-          50:  "#FEF8E7",
-          200: "#FADA7A",
-          400: "#F5C014",
-          600: "#C9950A",
-          800: "#7A5A04",
+          50:  "#FEF6E5",
+          200: "#FBD88A",
+          400: "#F6AE2D",   // Golden Yellow — highlights, emphasis
+          600: "#C48A1A",
+          800: "#7A5504",
         },
-        ink: "#1A1A2E",
+        signal: {
+          50:  "#FEF0E6",
+          100: "#FDDCC6",
+          400: "#F26419",   // Signal Orange — urgency, CTAs
+          600: "#D14E0D",
+        },
+        ink: "#2F4858",     // Deep Navy — primary text
+      },
+      fontFamily: {
+        sans: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+        serif: ['var(--font-lora)', 'Lora', 'Georgia', 'serif'],
       },
     },
   },

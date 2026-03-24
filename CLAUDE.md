@@ -22,17 +22,28 @@ An internal sales CRM + Google Places scraper built for orthodontic and dental p
 ---
 
 ## Brand Colors (ScheduleMyStaff palette)
-Custom Tailwind tokens defined in `tailwind.config.js`:
+Custom Tailwind tokens defined in `tailwind.config.js`. Based on official branding guide.
 
-| Token | Hex | Usage |
+### Color Palette
+| Brand Name | Token | Hex | Usage |
+|---|---|---|---|
+| Deep Navy | `cobalt-700`, `ink` | `#2F4858` | Sidebar bg, dark backgrounds, primary text |
+| Core Blue | `cobalt-600` | `#33658A` | Primary buttons, active states, links |
+| Sky Blue | `cobalt-200` | `#86BBD8` | Secondary surfaces, accents, data states |
+| — | `cobalt-50/100` | `#EAF1F7 / #D0E1EE` | Light tints for selected rows, filter highlights |
+| Golden Yellow | `yolk-400` | `#F6AE2D` | Highlights, emphasis, positive attention |
+| — | `yolk-50/200` | `#FEF6E5 / #FBD88A` | Light yellow tints |
+| — | `yolk-600` | `#C48A1A` | Darker gold for text on light backgrounds |
+| Signal Orange | `signal-400` | `#F26419` | Urgency, CTAs, energetic callouts |
+| — | `signal-50/100` | `#FEF0E6 / #FDDCC6` | Light orange tints |
+
+**Working ratio**: Deep Navy and Core Blue as base, Sky Blue for softness/hierarchy, Golden Yellow as main highlight, Signal Orange sparingly for urgency.
+
+### Typography
+| Role | Typeface | Tailwind class |
 |---|---|---|
-| `cobalt-600` | `#2A4FB5` | Primary buttons, active states, links |
-| `cobalt-700` | `#172D6E` | Sidebar bg, active tabs, hover darken |
-| `cobalt-50/100` | `#EEF2FB / #dce6f7` | Light tints for selected rows, filter highlights |
-| `yolk-400` | `#F5C014` | Accent — sidebar active nav, dentist type, CTAs |
-| `yolk-50/200` | `#FEF8E7 / #FADA7A` | Light yellow tints |
-| `yolk-600` | `#C9950A` | Darker yolk for text on light backgrounds |
-| `ink` | `#1A1A2E` | Deep ink for headings and primary text |
+| Headlines / UI | Helvetica Neue (sans-serif fallback) | `font-sans` (default) |
+| Body text / descriptions | Lora (serif) | `font-serif` |
 
 ---
 
